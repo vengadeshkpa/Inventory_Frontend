@@ -15,6 +15,7 @@ const InventoryList = () => {
     const [selectedProduct, setSelectedProduct] = useState(""); // Selected product filter
     const [message, setMessage] = useState("");
     const [deletingId, setDeletingId] = useState(null);
+    const [openAddProductModal, setOpenAddProductModal] = useState(false);
     const [openAddModal, setOpenAddModal] = useState(false);
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [selectedDeleteId, setSelectedDeleteId] = useState(null);
@@ -24,6 +25,7 @@ const InventoryList = () => {
     const [operationType, setOperationType] = useState("");
     const [editYards, setEditYards] = useState("");
     const [editPieces, setEditPieces] = useState("");
+    const [addProductName, setAddProductName] = useState("");
     //const [editProductName, setProductName] = useState("");
     //const [editColor, setColor] = useState("");
     //const [editCategory, setCategory] = useState("");
@@ -98,6 +100,27 @@ const InventoryList = () => {
         setEditModalOpen(true);
     };
 
+    const handleAddProductSubmit =(e)=>{
+        e.preventDefault();
+
+        if (!addProductName) {
+            alert("All fields are required!");
+            return;
+        }
+
+        try {
+            axios.post("http://localhost:8080/api/inventory/addProduct", {
+                addProductName
+            });
+            setAddProductName("");
+            setOpenAddProductModal(false)
+        } catch (error) {
+            console.error("Error adding Product:", error);
+            alert("Failed to add Product!");
+            setOpenAddProductModal(false)
+        }
+    }
+
     const handleOperationSubmit = () => {
         if (!selectedItem) return;
 
@@ -117,11 +140,11 @@ const InventoryList = () => {
         console.log("Updated Item:", updatedItem);
 
         try {
-            var id = selectedItem?.product?.id
+            var id = selectedItem?.id
             var category = selectedItem?.category
             var color = selectedItem?.color
             var pName = selectedItem?.product?.productName
-            
+
             axios.put(`http://localhost:8080/api/inventory/updatecond/${id}/${operationType}`,{
                 productName : pName,
                 color : color,
@@ -268,7 +291,8 @@ const InventoryList = () => {
 
             {/* Buttons for Add & Update */}
             <Box mt={3} display="flex" justifyContent="center" gap={2}>
-                <Button variant="contained" color="primary" onClick={() => setOpenAddModal(true)}>Add Item</Button>
+                <Button variant="contained" color="primary" onClick={() => setOpenAddProductModal(true)}>Add Item</Button>
+                <Button variant="contained" color="primary" onClick={() => setOpenAddModal(true)}>Add Inventory</Button>
                 <Button variant="contained" color="secondary" onClick={downloadExcel}>Export to Excel</Button>
             </Box>
 
@@ -360,6 +384,31 @@ const InventoryList = () => {
                         <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
                             <Button onClick={() => setEditModalOpen(false)}>Cancel</Button>
                             <Button onClick={handleOperationSubmit} variant="contained" sx={{ ml: 2 }}>Submit</Button>
+                        </Box>
+                    </Box>
+                </Fade>
+            </Modal>
+
+            <Modal open={openAddProductModal} onClose={() => setOpenAddProductModal(false)} closeAfterTransition disableEnforceFocus
+  disableAutoFocus>
+                <Fade in={openAddProductModal}>
+                    <Box sx={{
+                        position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
+                        width: 400, bgcolor: "white", p: 4, borderRadius: 2
+                    }}>
+                        <Typography variant="h6" sx={{ mb: 2 }}>Add Product</Typography>
+                        
+                        <TextField 
+                            fullWidth label="Product Name" type="Text" 
+                            value={addProductName} 
+                            onChange={(e) => setAddProductName(e.target.value)} 
+                            sx={{ mt: 2 }}
+                        />
+
+                        {/* Action Buttons */}
+                        <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
+                            <Button onClick={() => setOpenAddProductModal(false)}>Cancel</Button>
+                            <Button onClick={handleAddProductSubmit} variant="contained" sx={{ ml: 2 }}>Submit</Button>
                         </Box>
                     </Box>
                 </Fade>
