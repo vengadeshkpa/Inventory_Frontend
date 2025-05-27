@@ -1,12 +1,13 @@
 import React from "react";
 import { CssBaseline } from "@mui/material";
-import InventoryList from "./components/InventoryList";
+import MasterProductList from "./components/MasterProductList";
+
 
 const App = () => {
     return (
         <>
             <CssBaseline />
-            <InventoryList />
+            <MasterProductList />
         </>
     );
 };
