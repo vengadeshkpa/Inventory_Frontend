@@ -11,33 +11,29 @@ const SaleProduct = ({ masterData, onClose, onSaleSuccess }) => {
         {
             productId: "",
             color: "",
-            category: "",
-            quantities: [""]
+            pieces: 1,
+            quantities: [""],
+            unitPrice: ""
         }
     ]);
     const [productColors, setProductColors] = useState({});
-    const [productCategories, setProductCategories] = useState({}); // Add this with your other useState
     const [reviewMode, setReviewMode] = useState(false);
     const [success, setSuccess] = useState(false);
 
     // Helper to get product object by id
     const getProductById = (id) => masterData.find(p => String(p.id) === String(id));
-    const getCategories = (product) => product?.categories || ["A", "B", "C"];
 
     const handleProductChange = async (idx, field, value) => {
         const updated = [...products];
         updated[idx][field] = value;
-        // Reset dependent fields if product changes
         if (field === "productId") {
             updated[idx].color = "";
-            updated[idx].category = "";
-
             // Fetch colors for the selected product from backend
             try {
                 const response = await axios.get(`http://localhost:8080/api/inventory/colors/${value}`);
                 setProductColors(prev => ({
                     ...prev,
-                    [value]: response.data // assuming response.data is an array of colors
+                    [value]: response.data
                 }));
             } catch (error) {
                 setProductColors(prev => ({
@@ -45,32 +41,24 @@ const SaleProduct = ({ masterData, onClose, onSaleSuccess }) => {
                     [value]: []
                 }));
             }
-            setProductCategories(prev => ({
-                ...prev,
-                [value]: {} // reset categories for this product
-            }));
         }
-        if (field === "color") {
-            updated[idx].category = "";
-            // Fetch categories for the selected product and color from backend
-            try {
-                const response = await axios.get(`http://localhost:8080/api/inventory/categories/${updated[idx].productId}/${value}`);
-                setProductCategories(prev => ({
-                    ...prev,
-                    [updated[idx].productId]: {
-                        ...(prev[updated[idx].productId] || {}),
-                        [value]: response.data // assuming response.data is an array of categories
-                    }
-                }));
-            } catch (error) {
-                setProductCategories(prev => ({
-                    ...prev,
-                    [updated[idx].productId]: {
-                        ...(prev[updated[idx].productId] || {}),
-                        [value]: []
-                    }
-                }));
-            }
+        setProducts(updated);
+    };
+
+    // Handle change in number of pieces
+    const handlePiecesChange = (idx, value) => {
+        let pieces = parseInt(value, 10);
+        if (isNaN(pieces) || pieces < 1) pieces = 1;
+        const updated = [...products];
+        updated[idx].pieces = pieces;
+        // Adjust quantities array length
+        if (updated[idx].quantities.length < pieces) {
+            updated[idx].quantities = [
+                ...updated[idx].quantities,
+                ...Array(pieces - updated[idx].quantities.length).fill("")
+            ];
+        } else if (updated[idx].quantities.length > pieces) {
+            updated[idx].quantities = updated[idx].quantities.slice(0, pieces);
         }
         setProducts(updated);
     };
@@ -81,22 +69,10 @@ const SaleProduct = ({ masterData, onClose, onSaleSuccess }) => {
         setProducts(updated);
     };
 
-    const handleAddQuantity = (prodIdx) => {
-        const updated = [...products];
-        updated[prodIdx].quantities.push("");
-        setProducts(updated);
-    };
-
-    const handleRemoveQuantity = (prodIdx, qtyIdx) => {
-        const updated = [...products];
-        updated[prodIdx].quantities.splice(qtyIdx, 1);
-        setProducts(updated);
-    };
-
     const handleAddProduct = () => {
         setProducts([
             ...products,
-            { productId: "", color: "", category: "", quantities: [""] }
+            { productId: "", color: "", pieces: 1, quantities: [""], unitPrice: "" }
         ]);
     };
 
@@ -106,9 +82,23 @@ const SaleProduct = ({ masterData, onClose, onSaleSuccess }) => {
         setProducts(updated);
     };
 
+    // Handle unit price change
+    const handleUnitPriceChange = (idx, value) => {
+        const updated = [...products];
+        updated[idx].unitPrice = value;
+        setProducts(updated);
+    };
+
     // Show review page on first submit
     const handleSubmit = (e) => {
         e.preventDefault();
+        // Validate all quantities are filled
+        for (const prod of products) {
+            if (prod.quantities.some(q => q === "" || q === null || q === undefined)) {
+                alert("Please fill all quantity fields.");
+                return;
+            }
+        }
         setReviewMode(true);
     };
 
@@ -124,7 +114,6 @@ const SaleProduct = ({ masterData, onClose, onSaleSuccess }) => {
                 await axios.put(`http://localhost:8080/api/inventory/sale`, {
                     productId,
                     color: prod.color,
-                    category: prod.category,
                     saleYards,
                     salePieces
                 });
@@ -165,6 +154,7 @@ const SaleProduct = ({ masterData, onClose, onSaleSuccess }) => {
                     const productObj = getProductById(prod.productId);
                     const filteredQuantities = prod.quantities.filter(q => q !== "");
                     const total = filteredQuantities.map(Number).reduce((sum, q) => sum + q, 0);
+                    const totalPrice = prod.unitPrice && total ? (parseFloat(prod.unitPrice) * total).toFixed(2) : "";
                     return (
                         <Paper key={idx} sx={{ mb: 2, p: 2, borderLeft: "5px solid #1976d2", bgcolor: "#f5fafd" }}>
                             <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
@@ -174,7 +164,7 @@ const SaleProduct = ({ masterData, onClose, onSaleSuccess }) => {
                                 Color: <b>{prod.color}</b>
                             </Typography>
                             <Typography variant="body2" sx={{ ml: 1 }}>
-                                Category: <b>{prod.category}</b>
+                                Unit Price: <b>{prod.unitPrice}</b>
                             </Typography>
                             <Typography variant="body2" sx={{ ml: 1 }}>
                                 Quantities: {
@@ -196,6 +186,9 @@ const SaleProduct = ({ masterData, onClose, onSaleSuccess }) => {
                             </Typography>
                             <Typography variant="body2" sx={{ ml: 1 }}>
                                 Pieces: <b>{filteredQuantities.length}</b>
+                            </Typography>
+                            <Typography variant="body2" sx={{ ml: 1 }}>
+                                Total Price: <b>{totalPrice}</b>
                             </Typography>
                         </Paper>
                     );
@@ -252,55 +245,47 @@ const SaleProduct = ({ masterData, onClose, onSaleSuccess }) => {
                                         <MenuItem key={i} value={color}>{color}</MenuItem>
                                     ))}
                                 </Select>
-                                <Select
-                                    fullWidth
-                                    value={prod.category}
-                                    onChange={e => handleProductChange(idx, "category", e.target.value)}
-                                    displayEmpty
-                                    required
-                                    sx={{ minWidth: 120 }}
-                                    disabled={!prod.productId || !prod.color}
-                                >
-                                    <MenuItem value="" disabled>Select Category</MenuItem>
-                                    {(productCategories[prod.productId]?.[prod.color] || []).map((cat, i) => (
-                                        <MenuItem key={i} value={cat}>{cat}</MenuItem>
-                                    ))}
-                                </Select>
                                 {products.length > 1 && (
                                     <IconButton onClick={() => handleRemoveProduct(idx)} color="error">
                                         <RemoveIcon />
                                     </IconButton>
                                 )}
                             </Box>
-                            <Box mt={2}>
+                            <Box mt={2} display="flex" alignItems="center" gap={2}>
+                                <TextField
+                                    label="Number of Pieces"
+                                    type="number"
+                                    value={prod.pieces}
+                                    onChange={e => handlePiecesChange(idx, e.target.value)}
+                                    required
+                                    inputProps={{ min: 1 }}
+                                    sx={{ width: 160 }}
+                                />
                                 <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
-                                    {prod.quantities.map((qty, qIdx) => (
-                                        <Box key={qIdx} display="flex" alignItems="center" gap={1} mb={1}>
-                                            <TextField
-                                                label="Quantity"
-                                                type="number"
-                                                value={qty}
-                                                onChange={e => handleQuantityChange(idx, qIdx, e.target.value)}
-                                                required
-                                                inputProps={{ min: 0, step: "any" }}
-                                                sx={{ width: 120 }}
-                                            />
-                                            {prod.quantities.length > 1 && (
-                                                <IconButton onClick={() => handleRemoveQuantity(idx, qIdx)} color="error">
-                                                    <RemoveIcon fontSize="small" />
-                                                </IconButton>
-                                            )}
-                                        </Box>
+                                    {Array.from({ length: prod.pieces }).map((_, qIdx) => (
+                                        <TextField
+                                            key={qIdx}
+                                            label={`Quantity ${qIdx + 1}`}
+                                            type="number"
+                                            value={prod.quantities[qIdx] || ""}
+                                            onChange={e => handleQuantityChange(idx, qIdx, e.target.value)}
+                                            required
+                                            inputProps={{ min: 0, step: "any" }}
+                                            sx={{ width: 120 }}
+                                        />
                                     ))}
                                 </Box>
-                                <Button
-                                    size="small"
-                                    startIcon={<AddIcon />}
-                                    onClick={() => handleAddQuantity(idx)}
-                                    sx={{ mt: 1 }}
-                                >
-                                    Add more
-                                </Button>
+                            </Box>
+                            <Box mt={2} display="flex" alignItems="center">
+                                <TextField
+                                    label="Unit Price"
+                                    type="number"
+                                    value={prod.unitPrice}
+                                    onChange={e => handleUnitPriceChange(idx, e.target.value)}
+                                    required
+                                    inputProps={{ min: 0, step: "any" }}
+                                    sx={{ width: 160 }}
+                                />
                             </Box>
                         </Box>
                     );

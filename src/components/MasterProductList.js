@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
     Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Link,
-    Button, Modal, Fade, TextField
+    Button, Modal, Fade, TextField, MenuItem, Select
 } from "@mui/material";
 import InventoryList from "./InventoryList";
 import AddInventory from "./AddInventory";
@@ -15,23 +15,29 @@ const MasterProductList = () => {
     const [openAddInventoryModal, setOpenAddInventoryModal] = useState(false);
     const [openSaleModal, setOpenSaleModal] = useState(false); // Add this state
     const [addProductName, setAddProductName] = useState("");
+    const [addProductCategory, setAddProductCategory] = useState(""); // Add this state
     const [message, setMessage] = useState("");
+    const [selectedCategory, setSelectedCategory] = useState("A"); // <-- NEW STATE
 
-    const fetchAndGroup = async () => {
+    // Fetch and group inventory by selected category
+    const fetchAndGroup = async (category = selectedCategory) => {
         try {
             const response = await axios.get("http://localhost:8080/api/inventory");
             const inventory = response.data;
 
-            // Group by productName and sum yards and pieces
+            // Group by productName and sum yards and pieces, filter by category
             const grouped = {};
             inventory.forEach(item => {
+                // Assume item.product.category exists
+                if ((item.product.category || "A") !== category) return;
                 const name = item.product.productName;
                 if (!grouped[name]) {
                     grouped[name] = {
                         id: item.product.id,
                         productName: name,
                         totalYards: 0,
-                        totalPieces: 0
+                        totalPieces: 0,
+                        category: item.product.category
                     };
                 }
                 grouped[name].totalYards += Number(item.yardAvailable) || 0;
@@ -44,22 +50,31 @@ const MasterProductList = () => {
         }
     };
 
+    // Fetch on mount and when selectedCategory changes
     useEffect(() => {
-        fetchAndGroup();
-    }, []);
+        fetchAndGroup(selectedCategory);
+        // eslint-disable-next-line
+    }, [selectedCategory]);
+
+    // Handler for category dropdown
+    const handleCategoryChange = (e) => {
+        setSelectedCategory(e.target.value);
+    };
 
     // Handler for adding a product
     const handleAddProductSubmit = async (e) => {
         e.preventDefault();
-        if (!addProductName) {
+        if (!addProductName || !addProductCategory) {
             alert("All fields are required!");
             return;
         }
         try {
             await axios.post("http://localhost:8080/api/inventory/addProduct", {
-                addProductName
+                addProductName,
+                addProductCategory // Include category in the request
             });
             setAddProductName("");
+            setAddProductCategory(""); // Reset category
             setOpenAddProductModal(false);
             setMessage("Master item added successfully! ✅");
             // Call your fetchProducts or equivalent here to refresh the list
@@ -77,7 +92,7 @@ const MasterProductList = () => {
             <InventoryList
                 initialProduct={selectedProduct}
                 onBack={() => setSelectedProduct(null)}
-                onInventoryChange={fetchAndGroup} // <-- Add this prop
+                onInventoryChange={() => fetchAndGroup(selectedCategory)}
             />
         );
     }
@@ -85,13 +100,30 @@ const MasterProductList = () => {
     return (
         <Box mt={5} display="flex" justifyContent="center">
             <Box sx={{ width: "100%", maxWidth: 900 }}>
-                <Typography
-                    variant="h5"
-                    align="center"
-                    sx={{ fontWeight: "bold", color: "#333", mb: 2 }}
-                >
-                    Master Product Summary
-                </Typography>
+                <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                    <Box flex={1} display="flex" justifyContent="center">
+                        <Typography
+                            variant="h5"
+                            align="center"
+                            sx={{ fontWeight: "bold", color: "#333", mb: 2 }}
+                        >
+                            Master Product Summary
+                        </Typography>
+                    </Box>
+                    {/* Category Dropdown at right top */}
+                    <Box>
+                        <Select
+                            value={selectedCategory}
+                            onChange={handleCategoryChange}
+                            size="small"
+                            sx={{ minWidth: 120, bgcolor: "white", ml: 2 }}
+                        >
+                            <MenuItem value="A">Category A</MenuItem>
+                            <MenuItem value="B">Category B</MenuItem>
+                            <MenuItem value="C">Category C</MenuItem>
+                        </Select>
+                    </Box>
+                </Box>
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                     <Button variant="contained" color="primary" onClick={() => setOpenAddProductModal(true)}>
                         Add Item
@@ -169,11 +201,28 @@ const MasterProductList = () => {
                         }}>
                             <Typography variant="h6" sx={{ mb: 2 }}>Add Product</Typography>
                             <TextField
-                                fullWidth label="Product Name" type="Text"
+                                fullWidth
+                                label="Product Name"
+                                type="Text"
                                 value={addProductName}
                                 onChange={(e) => setAddProductName(e.target.value)}
                                 sx={{ mt: 2 }}
                             />
+                            {/* Change this TextField to a Select for Category */}
+                            <Box sx={{ mt: 2 }}>
+                                <TextField
+                                    select
+                                    fullWidth
+                                    label="Category"
+                                    value={addProductCategory}
+                                    onChange={(e) => setAddProductCategory(e.target.value)}
+                                >
+                                    <MenuItem value="">Select Category</MenuItem>
+                                    <MenuItem value="A">A</MenuItem>
+                                    <MenuItem value="B">B</MenuItem>
+                                    <MenuItem value="C">C</MenuItem>
+                                </TextField>
+                            </Box>
                             <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
                                 <Button onClick={() => setOpenAddProductModal(false)}>Cancel</Button>
                                 <Button onClick={handleAddProductSubmit} variant="contained" sx={{ ml: 2 }}>Submit</Button>

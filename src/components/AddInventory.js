@@ -5,21 +5,18 @@ import { TextField, Button, Paper, Box, MenuItem, Select, InputLabel, FormContro
 const AddInventory = ({ onItemAdded, initialProductName = "" }) => {
     const [productName, setProductName] = useState(initialProductName);
     const [color, setColor] = useState("");
-    const [category, setCategory] = useState("");
     const [yardAvailable, setYardAvailable] = useState("");
     const [pieceAvailable, setPieceAvailable] = useState("");
-    const [masterProducts, setMasterProducts] = useState([]); // Default empty array
-    const [inventoryUnit, setInventoryUnit] = useState("Meter"); // Default to 'Meter'
+    const [masterProducts, setMasterProducts] = useState([]);
+    const [inventoryUnit, setInventoryUnit] = useState("Meter");
 
     useEffect(() => {
         axios.get("http://localhost:8080/api/inventory/master-products")
             .then(response => {
-                console.log(response.data); // Debugging
-                setMasterProducts(response.data || []); // Ensure it's always an array
+                setMasterProducts(response.data || []);
             })
             .catch(error => {
-                console.error("Error fetching master products:", error);
-                setMasterProducts([]); // Fallback to empty array
+                setMasterProducts([]);
             });
     }, []);
 
@@ -30,7 +27,7 @@ const AddInventory = ({ onItemAdded, initialProductName = "" }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!productName || !color || !category || !yardAvailable || !pieceAvailable || !inventoryUnit) {
+        if (!productName || !color || !yardAvailable || !pieceAvailable || !inventoryUnit) {
             alert("All fields are required!");
             return;
         }
@@ -39,21 +36,18 @@ const AddInventory = ({ onItemAdded, initialProductName = "" }) => {
             await axios.post("http://localhost:8080/api/inventory", {
                 productName,
                 color,
-                category,
-                inventoryUnit: inventoryUnit, // Send as 'inventoryUnit' in payload
+                inventoryUnit,
                 yardAvailable: parseFloat(yardAvailable),
                 pieceAvailable: parseFloat(pieceAvailable),
             });
 
-            setProductName(""); // Reset after submission
+            setProductName("");
             setColor("");
-            setCategory("");
-            setInventoryUnit("Meter"); // Reset to default
+            setInventoryUnit("Meter");
             setYardAvailable("");
             setPieceAvailable("");
             onItemAdded();
         } catch (error) {
-            console.error("Error adding item:", error);
             alert("Failed to add item!");
         }
     };
@@ -62,7 +56,6 @@ const AddInventory = ({ onItemAdded, initialProductName = "" }) => {
         <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
             <form onSubmit={handleSubmit}>
                 <Box display="flex" flexDirection="column" gap={2}>
-
                     {/* Product Name Dropdown */}
                     <FormControl fullWidth>
                         <InputLabel id="demo-simple-select-label">Product Name</InputLabel>
@@ -70,7 +63,7 @@ const AddInventory = ({ onItemAdded, initialProductName = "" }) => {
                             value={productName}
                             onChange={(e) => setProductName(e.target.value)}
                             label="Product Name"
-                            disabled={!!initialProductName} // Disable if initialProductName is set
+                            disabled={!!initialProductName}
                         >
                             <MenuItem value="">Select a product</MenuItem>
                             {masterProducts
@@ -84,22 +77,6 @@ const AddInventory = ({ onItemAdded, initialProductName = "" }) => {
                     </FormControl>
 
                     <TextField label="Color" variant="outlined" fullWidth value={color} onChange={(e) => setColor(e.target.value)} />
-
-                    {/* Category Dropdown - Updated */}
-                    <FormControl fullWidth>
-                        <InputLabel id="category-select-label">Category</InputLabel>
-                        <Select
-                            labelId="category-select-label"
-                            value={category}
-                            label="Category"
-                            onChange={(e) => setCategory(e.target.value)}
-                        >
-                            <MenuItem value="">Select a category</MenuItem>
-                            <MenuItem value="A">A</MenuItem>
-                            <MenuItem value="B">B</MenuItem>
-                            <MenuItem value="C">C</MenuItem>
-                        </Select>
-                    </FormControl>
 
                     {/* Unit Radio Group */}
                     <FormControl component="fieldset">
