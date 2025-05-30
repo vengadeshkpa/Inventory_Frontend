@@ -18,6 +18,9 @@ const MasterProductList = () => {
     const [addProductCategory, setAddProductCategory] = useState(""); // Add this state
     const [message, setMessage] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("A"); // <-- NEW STATE
+    const [openAddCustomerModal, setOpenAddCustomerModal] = useState(false);
+    const [newCustomerName, setNewCustomerName] = useState("");
+    const [customerMessage, setCustomerMessage] = useState("");
 
     // Fetch and group inventory by selected category
     const fetchAndGroup = async (category = selectedCategory) => {
@@ -86,6 +89,27 @@ const MasterProductList = () => {
         }
     };
 
+    // Handler for adding a new customer
+    const handleAddCustomer = async () => {
+        if (!newCustomerName.trim()) {
+            setCustomerMessage("Customer name is required!");
+            return;
+        }
+        try {
+            await axios.post("http://localhost:8080/api/customers/addCustomer", {
+                name: newCustomerName.trim()
+            });
+            setCustomerMessage("Customer added successfully! ✅");
+            setNewCustomerName("");
+            setTimeout(() => {
+                setCustomerMessage("");
+                setOpenAddCustomerModal(false);
+            }, 1500);
+        } catch (error) {
+            setCustomerMessage("Failed to add customer!");
+        }
+    };
+
     // If a product is selected, show InventoryList filtered by that product
     if (selectedProduct) {
         return (
@@ -100,6 +124,60 @@ const MasterProductList = () => {
     return (
         <Box mt={5} display="flex" justifyContent="center">
             <Box sx={{ width: "100%", maxWidth: 900 }}>
+                {/* Add Customer Button */}
+                <Box display="flex" justifyContent="flex-end" mb={2}>
+                    <Button
+                        variant="outlined"
+                        color="primary"
+                        onClick={() => setOpenAddCustomerModal(true)}
+                    >
+                        Add Customer
+                    </Button>
+                </Box>
+                {/* Add Customer Modal */}
+                <Modal
+                    open={openAddCustomerModal}
+                    onClose={() => setOpenAddCustomerModal(false)}
+                    closeAfterTransition
+                >
+                    <Fade in={openAddCustomerModal}>
+                        <Box sx={{
+                            position: "absolute",
+                            top: "50%",
+                            left: "50%",
+                            transform: "translate(-50%, -50%)",
+                            width: 400,
+                            bgcolor: "white",
+                            p: 4,
+                            borderRadius: 2
+                        }}>
+                            <Typography variant="h6" sx={{ mb: 2 }}>Add Customer</Typography>
+                            <TextField
+                                fullWidth
+                                label="Enter customer name"
+                                placeholder="Enter customer name"
+                                value={newCustomerName}
+                                onChange={e => setNewCustomerName(e.target.value)}
+                                sx={{ mb: 2 }}
+                            />
+                            {customerMessage && (
+                                <Typography variant="body2" color={customerMessage.includes("success") ? "green" : "error"} sx={{ mb: 2 }}>
+                                    {customerMessage}
+                                </Typography>
+                            )}
+                            <Box display="flex" justifyContent="flex-end" gap={2}>
+                                <Button onClick={() => setOpenAddCustomerModal(false)}>Cancel</Button>
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    onClick={handleAddCustomer}
+                                >
+                                    Submit
+                                </Button>
+                            </Box>
+                        </Box>
+                    </Fade>
+                </Modal>
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                     <Box flex={1} display="flex" justifyContent="center">
                         <Typography

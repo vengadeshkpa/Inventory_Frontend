@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import {
     Box, Button, Typography, MenuItem, Select, TextField, IconButton, Paper, Divider
@@ -19,6 +19,18 @@ const SaleProduct = ({ masterData, onClose, onSaleSuccess }) => {
     const [productColors, setProductColors] = useState({});
     const [reviewMode, setReviewMode] = useState(false);
     const [success, setSuccess] = useState(false);
+
+    // New state for invoice number and customers
+    const [invoiceNumber, setInvoiceNumber] = useState("");
+    const [customers, setCustomers] = useState([]);
+    const [selectedCustomer, setSelectedCustomer] = useState("");
+
+    // Fetch customers on mount
+    useEffect(() => {
+        axios.get("http://localhost:8080/api/customers")
+            .then(res => setCustomers(res.data || []))
+            .catch(() => setCustomers([]));
+    }, []);
 
     // Helper to get product object by id
     const getProductById = (id) => masterData.find(p => String(p.id) === String(id));
@@ -99,6 +111,14 @@ const SaleProduct = ({ masterData, onClose, onSaleSuccess }) => {
                 return;
             }
         }
+        if (!invoiceNumber) {
+            alert("Please enter invoice number.");
+            return;
+        }
+        if (!selectedCustomer) {
+            alert("Please select a customer.");
+            return;
+        }
         setReviewMode(true);
     };
 
@@ -115,7 +135,9 @@ const SaleProduct = ({ masterData, onClose, onSaleSuccess }) => {
                     productId,
                     color: prod.color,
                     saleYards,
-                    salePieces
+                    salePieces,
+                    invoiceNumber,
+                    customerId: selectedCustomer
                 });
             }
             setSuccess(true);
@@ -213,6 +235,30 @@ const SaleProduct = ({ masterData, onClose, onSaleSuccess }) => {
                 }}
             >
                 <Typography variant="h6" sx={{ mb: 2 }}>Sale Product</Typography>
+                {/* Invoice number and customer dropdown */}
+                <Box display="flex" alignItems="center" gap={2} mb={2}>
+                    <TextField
+                        label="Invoice Number"
+                        value={invoiceNumber}
+                        onChange={e => setInvoiceNumber(e.target.value)}
+                        required
+                        sx={{ width: 200 }}
+                    />
+                    <Select
+                        value={selectedCustomer}
+                        onChange={e => setSelectedCustomer(e.target.value)}
+                        displayEmpty
+                        required
+                        sx={{ minWidth: 220 }}
+                    >
+                        <MenuItem value="" disabled>Select Customer</MenuItem>
+                        {customers.map((cust) => (
+                            <MenuItem key={cust.id} value={cust.id}>
+                                {cust.name}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </Box>
                 {products.map((prod, idx) => {
                     const productObj = getProductById(prod.productId);
                     return (
