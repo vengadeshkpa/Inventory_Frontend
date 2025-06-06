@@ -42,8 +42,8 @@ const EditInventory = ({
                         label="Operation Types"
                     >
                         <MenuItem value="Procure">Procurement</MenuItem>
-                        <MenuItem value="Sales">Sale</MenuItem>
                         <MenuItem value="Hold">On Hold</MenuItem>
+                        <MenuItem value="Release">Release Hold</MenuItem>
                     </Select>
                 </FormControl>
                 <TextField

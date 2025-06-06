@@ -7,6 +7,7 @@ import {
 import InventoryList from "./InventoryList";
 import AddInventory from "./AddInventory";
 import SaleProduct from "./SaleProduct"; // Add this import
+import InvoiceList from "./InvoiceList"; // <-- add this import
 
 const MasterProductList = () => {
     const [masterData, setMasterData] = useState([]);
@@ -21,6 +22,8 @@ const MasterProductList = () => {
     const [openAddCustomerModal, setOpenAddCustomerModal] = useState(false);
     const [newCustomerName, setNewCustomerName] = useState("");
     const [customerMessage, setCustomerMessage] = useState("");
+    const [showOrders, setShowOrders] = useState(false); // <-- add this state
+    const [selectedCustomer, setSelectedCustomer] = useState(""); // <-- NEW STATE FOR CUSTOMER
 
     // Fetch and group inventory by selected category
     const fetchAndGroup = async (category = selectedCategory) => {
@@ -121,6 +124,10 @@ const MasterProductList = () => {
         );
     }
 
+    if (showOrders) {
+        return <InvoiceList onBack={() => setShowOrders(false)} />;
+    }
+
     return (
         <Box mt={5} display="flex" justifyContent="center">
             <Box sx={{ width: "100%", maxWidth: 900 }}>
@@ -219,6 +226,13 @@ const MasterProductList = () => {
                         onClick={() => setOpenSaleModal(true)}
                     >
                         Sale
+                    </Button>
+                    <Button
+                        variant="contained"
+                        color="info"
+                        onClick={() => setShowOrders(true)}
+                    >
+                        Orders
                     </Button>
                 </Box>
                 <TableContainer
@@ -350,6 +364,8 @@ const MasterProductList = () => {
                         }}>
                             <SaleProduct
                                 masterData={masterData}
+                                selectedCustomer={selectedCustomer} // <-- pass selectedCustomer
+                                setSelectedCustomer={setSelectedCustomer} // <-- pass setSelectedCustomer
                                 onClose={() => setOpenSaleModal(false)}
                                 onSaleSuccess={fetchAndGroup} // <-- pass this prop
                             />

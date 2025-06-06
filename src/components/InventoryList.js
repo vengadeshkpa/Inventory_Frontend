@@ -264,7 +264,7 @@ const InventoryList = ({ initialProduct = "", onBack, onInventoryChange }) => {
                                 <TableCell sx={{ color: "white", fontWeight: "bold" }}>ID</TableCell>
                                 <TableCell sx={{ color: "white", fontWeight: "bold" }}>Product Name</TableCell>
                                 <TableCell sx={{ color: "white", fontWeight: "bold" }}>Color</TableCell>
-                                <TableCell sx={{ color: "white", fontWeight: "bold" }}>Category</TableCell>
+                                {/* <TableCell sx={{ color: "white", fontWeight: "bold" }}>Category</TableCell> */}
                                 <TableCell sx={{ color: "white", fontWeight: "bold" }}>Unit</TableCell> {/* New UNIT column */}
                                 <TableCell sx={{ color: "white", fontWeight: "bold" }}>Quantity Available</TableCell>
                                 <TableCell sx={{ color: "white", fontWeight: "bold" }}>Piece Available</TableCell>
@@ -291,8 +291,8 @@ const InventoryList = ({ initialProduct = "", onBack, onInventoryChange }) => {
                                             <TableCell>{item.id}</TableCell>
                                             <TableCell>{item.product.productName}</TableCell>
                                             <TableCell>{item.color}</TableCell>
-                                            <TableCell>{item.category}</TableCell>
-                                            <TableCell>{item.inventoryUnit}</TableCell> {/* New UNIT value */}
+                                            {/* <TableCell>{item.category}</TableCell> */}
+                                            <TableCell>{item.inventoryUnit}</TableCell> 
                                             <TableCell>{item.yardAvailable}</TableCell>
                                             <TableCell>{item.pieceAvailable}</TableCell>
                                             {/* <TableCell>{item.loadedYards}</TableCell>

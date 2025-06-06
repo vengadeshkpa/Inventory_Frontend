@@ -125,6 +125,7 @@ const SaleProduct = ({ masterData, onClose, onSaleSuccess }) => {
     // Final submit (API call can go here)
     const handleFinalSubmit = async () => {
         try {
+            // 1. Existing sale API calls (keep as is)
             for (const prod of products) {
                 const productId = prod.productId;
                 const saleQuantities = prod.quantities.filter(q => q !== "").map(Number);
@@ -137,9 +138,49 @@ const SaleProduct = ({ masterData, onClose, onSaleSuccess }) => {
                     saleYards,
                     salePieces,
                     invoiceNumber,
-                    customerId: selectedCustomer
                 });
             }
+
+            // 2. Additional step: Save invoice header and entries
+            const customerObj = customers.find(c => String(c.id) === String(selectedCustomer));
+            const grandTotal = products.reduce((sum, prod) => {
+                const filteredQuantities = prod.quantities.filter(q => q !== "");
+                const total = filteredQuantities.map(Number).reduce((s, q) => s + q, 0);
+                const totalPrice = prod.unitPrice && total ? parseFloat(prod.unitPrice) * total : 0;
+                return sum + totalPrice;
+            }, 0);
+
+            const invoiceHeader = {
+                invoiceNumber,
+                customerId: customerObj ? Number(customerObj.id) : null,
+                customerName: customerObj ? customerObj.name : "",
+                totalPrice: grandTotal,
+            };
+
+            console.log("Invoice Header:", invoiceHeader);
+            //console.log("Products for Invoice:", products);
+
+            const invoiceEntries = products.map(prod => {
+                const filteredQuantities = prod.quantities.filter(q => q !== "");
+                const totalQuantity = filteredQuantities.map(Number).reduce((sum, q) => sum + q, 0);
+                const totalProductPrice = prod.unitPrice && totalQuantity ? parseFloat(prod.unitPrice) * totalQuantity : 0;
+                return {
+                    color: prod.color,
+                    productName: masterData.find(p => String(p.id) === String(prod.productId))?.productName || "",
+                    pieceAvailable: filteredQuantities.length,
+                    quantity: totalQuantity,
+                    totalProductPrice,
+                    unitPrice: prod.unitPrice,
+                };
+            });
+
+            console.log("Invoice Entries:", invoiceEntries);
+
+            await axios.post("http://localhost:8080/api/invoices", {
+                invoiceHeader,
+                invoiceEntries,
+            });
+
             setSuccess(true);
             if (onSaleSuccess) {
                 await onSaleSuccess(); // Refresh master data in parent
@@ -167,11 +208,36 @@ const SaleProduct = ({ masterData, onClose, onSaleSuccess }) => {
     }
 
     if (reviewMode) {
+        // Find the selected customer object
+        const customerObj = customers.find(c => String(c.id) === String(selectedCustomer));
+        // Calculate total price for all products (keep as number)
+        const grandTotal = products.reduce((sum, prod) => {
+            const filteredQuantities = prod.quantities.filter(q => q !== "");
+            const total = filteredQuantities.map(Number).reduce((s, q) => s + q, 0);
+            const totalPrice = prod.unitPrice && total ? parseFloat(prod.unitPrice) * total : 0;
+            return sum + totalPrice;
+        }, 0);
+
         return (
             <Box sx={{ maxHeight: "70vh", overflowY: "auto", pr: 2 }}>
-                <Typography variant="h6" sx={{ mb: 2, color: "#1976d2", fontWeight: "bold" }}>
-                    Sale Review
-                </Typography>
+                <Box display="flex" alignItems="center" sx={{ mb: 2 }}>
+                    <Typography variant="h6" sx={{ color: "#1976d2", fontWeight: "bold", flex: 1 }}>
+                        Sale Review
+                    </Typography>
+                    <Box sx={{ flex: 2, display: "flex", justifyContent: "center" }}>
+                        <span style={{ fontWeight: "normal", fontSize: 16 }}>
+                            | Invoice: <b>{invoiceNumber}</b>
+                            {customerObj && (
+                                <>
+                                    {" | Customer: "}
+                                    <b>{customerObj.name}</b>
+                                </>
+                            )}
+                            {" | Total Price: "}
+                            <b>{grandTotal.toFixed(2)}</b>
+                        </span>
+                    </Box>
+                </Box>
                 {products.map((prod, idx) => {
                     const productObj = getProductById(prod.productId);
                     const filteredQuantities = prod.quantities.filter(q => q !== "");
@@ -246,14 +312,17 @@ const SaleProduct = ({ masterData, onClose, onSaleSuccess }) => {
                     />
                     <Select
                         value={selectedCustomer}
-                        onChange={e => setSelectedCustomer(e.target.value)}
+                        onChange={e => {
+                            console.log("Selected customer:", e.target.value+"--"+selectedCustomer);
+                            setSelectedCustomer(String(e.target.value));
+                        }}
                         displayEmpty
                         required
                         sx={{ minWidth: 220 }}
                     >
                         <MenuItem value="" disabled>Select Customer</MenuItem>
                         {customers.map((cust) => (
-                            <MenuItem key={cust.id} value={cust.id}>
+                            <MenuItem key={cust.customerId} value={String(cust.customerId)}>
                                 {cust.name}
                             </MenuItem>
                         ))}
