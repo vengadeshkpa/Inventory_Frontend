@@ -12,7 +12,6 @@ import * as XLSX from "xlsx";
 
 const InventoryList = ({ initialProduct = "", onBack, onInventoryChange }) => {
     const [items, setItems] = useState([]); // Full inventory list
-    const [uniqueProducts, setUniqueProducts] = useState([]); // Unique products extracted from inventory
     const [uniqueMasterProducts, setUniqueMasterProducts] = useState([]); // Unique products extracted from master products
     const [selectedProduct, setSelectedProduct] = useState(initialProduct); // Selected product filter
     const [message, setMessage] = useState("");
@@ -38,10 +37,6 @@ const InventoryList = ({ initialProduct = "", onBack, onInventoryChange }) => {
         try {
             const response = await axios.get("http://localhost:8080/api/inventory");
             const inventoryData = response.data;
-
-            // Extract unique product names
-            const productsSet = new Set(inventoryData.map((item) => item.product.productName));
-            setUniqueProducts([...productsSet]); // Convert Set to Array
 
             setItems(inventoryData);
         } catch (error) {

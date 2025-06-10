@@ -125,6 +125,8 @@ const SaleProduct = ({ masterData, onClose, onSaleSuccess }) => {
     // Final submit (API call can go here)
     const handleFinalSubmit = async () => {
         try {
+            console.log("Submitting sale with invoice number:", invoiceNumber);
+
             // 1. Existing sale API calls (keep as is)
             for (const prod of products) {
                 const productId = prod.productId;
@@ -142,7 +144,8 @@ const SaleProduct = ({ masterData, onClose, onSaleSuccess }) => {
             }
 
             // 2. Additional step: Save invoice header and entries
-            const customerObj = customers.find(c => String(c.id) === String(selectedCustomer));
+            const customerObj = customers.find(c => String(c.customerId) === String(selectedCustomer));
+            
             const grandTotal = products.reduce((sum, prod) => {
                 const filteredQuantities = prod.quantities.filter(q => q !== "");
                 const total = filteredQuantities.map(Number).reduce((s, q) => s + q, 0);
@@ -152,9 +155,8 @@ const SaleProduct = ({ masterData, onClose, onSaleSuccess }) => {
 
             const invoiceHeader = {
                 invoiceNumber,
-                customerId: customerObj ? Number(customerObj.id) : null,
                 customerName: customerObj ? customerObj.name : "",
-                totalPrice: grandTotal,
+                grandTotal: grandTotal,
             };
 
             console.log("Invoice Header:", invoiceHeader);
@@ -209,7 +211,7 @@ const SaleProduct = ({ masterData, onClose, onSaleSuccess }) => {
 
     if (reviewMode) {
         // Find the selected customer object
-        const customerObj = customers.find(c => String(c.id) === String(selectedCustomer));
+        const customerObj = customers.find(c => String(c.customerId) === String(selectedCustomer));
         // Calculate total price for all products (keep as number)
         const grandTotal = products.reduce((sum, prod) => {
             const filteredQuantities = prod.quantities.filter(q => q !== "");
@@ -329,7 +331,7 @@ const SaleProduct = ({ masterData, onClose, onSaleSuccess }) => {
                     </Select>
                 </Box>
                 {products.map((prod, idx) => {
-                    const productObj = getProductById(prod.productId);
+                    
                     return (
                         <Box key={idx} sx={{ mb: 3, border: "1px solid #eee", p: 2, borderRadius: 1 }}>
                             <Box display="flex" alignItems="center" gap={2}>
