@@ -203,15 +203,15 @@ const MasterProductList = () => {
                             size="small"
                             sx={{ minWidth: 120, bgcolor: "white", ml: 2 }}
                         >
-                            <MenuItem value="A">Category A</MenuItem>
-                            <MenuItem value="B">Category B</MenuItem>
-                            <MenuItem value="C">Category C</MenuItem>
+                            <MenuItem value="A">Textile</MenuItem>
+                            <MenuItem value="B">Kabulon</MenuItem>
+                            <MenuItem value="C">MGT</MenuItem>
                         </Select>
                     </Box>
                 </Box>
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                     <Button variant="contained" color="primary" onClick={() => setOpenAddProductModal(true)}>
-                        Add Item
+                        Add Master Product
                     </Button>
                     <Button
                         variant="contained"
@@ -310,9 +310,9 @@ const MasterProductList = () => {
                                     onChange={(e) => setAddProductCategory(e.target.value)}
                                 >
                                     <MenuItem value="">Select Category</MenuItem>
-                                    <MenuItem value="A">A</MenuItem>
-                                    <MenuItem value="B">B</MenuItem>
-                                    <MenuItem value="C">C</MenuItem>
+                                    <MenuItem value="A">Textile</MenuItem>
+                                    <MenuItem value="B">Kabulon</MenuItem>
+                                    <MenuItem value="C">MGT</MenuItem>
                                 </TextField>
                             </Box>
                             <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
