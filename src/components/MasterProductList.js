@@ -8,6 +8,7 @@ import InventoryList from "./InventoryList";
 import AddInventory from "./AddInventory";
 import SaleProduct from "./SaleProduct"; // Add this import
 import InvoiceList from "./InvoiceList"; // <-- add this import
+import CustomerList from "./CustomerList";
 
 const MasterProductList = () => {
     const [masterData, setMasterData] = useState([]);
@@ -20,8 +21,6 @@ const MasterProductList = () => {
     const [message, setMessage] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("A"); // <-- NEW STATE
     const [openAddCustomerModal, setOpenAddCustomerModal] = useState(false);
-    const [newCustomerName, setNewCustomerName] = useState("");
-    const [customerMessage, setCustomerMessage] = useState("");
     const [showOrders, setShowOrders] = useState(false); // <-- add this state
     const [selectedCustomer, setSelectedCustomer] = useState(""); // <-- NEW STATE FOR CUSTOMER
 
@@ -92,27 +91,6 @@ const MasterProductList = () => {
         }
     };
 
-    // Handler for adding a new customer
-    const handleAddCustomer = async () => {
-        if (!newCustomerName.trim()) {
-            setCustomerMessage("Customer name is required!");
-            return;
-        }
-        try {
-            await axios.post("http://localhost:8080/api/customers/addCustomer", {
-                name: newCustomerName.trim()
-            });
-            setCustomerMessage("Customer added successfully! ✅");
-            setNewCustomerName("");
-            setTimeout(() => {
-                setCustomerMessage("");
-                setOpenAddCustomerModal(false);
-            }, 1500);
-        } catch (error) {
-            setCustomerMessage("Failed to add customer!");
-        }
-    };
-
     // If a product is selected, show InventoryList filtered by that product
     if (selectedProduct) {
         return (
@@ -141,50 +119,14 @@ const MasterProductList = () => {
                         Add Customer
                     </Button>
                 </Box>
-                {/* Add Customer Modal */}
-                <Modal
+                <CustomerList
                     open={openAddCustomerModal}
                     onClose={() => setOpenAddCustomerModal(false)}
-                    closeAfterTransition
-                >
-                    <Fade in={openAddCustomerModal}>
-                        <Box sx={{
-                            position: "absolute",
-                            top: "50%",
-                            left: "50%",
-                            transform: "translate(-50%, -50%)",
-                            width: 400,
-                            bgcolor: "white",
-                            p: 4,
-                            borderRadius: 2
-                        }}>
-                            <Typography variant="h6" sx={{ mb: 2 }}>Add Customer</Typography>
-                            <TextField
-                                fullWidth
-                                label="Enter customer name"
-                                placeholder="Enter customer name"
-                                value={newCustomerName}
-                                onChange={e => setNewCustomerName(e.target.value)}
-                                sx={{ mb: 2 }}
-                            />
-                            {customerMessage && (
-                                <Typography variant="body2" color={customerMessage.includes("success") ? "green" : "error"} sx={{ mb: 2 }}>
-                                    {customerMessage}
-                                </Typography>
-                            )}
-                            <Box display="flex" justifyContent="flex-end" gap={2}>
-                                <Button onClick={() => setOpenAddCustomerModal(false)}>Cancel</Button>
-                                <Button
-                                    variant="contained"
-                                    color="primary"
-                                    onClick={handleAddCustomer}
-                                >
-                                    Submit
-                                </Button>
-                            </Box>
-                        </Box>
-                    </Fade>
-                </Modal>
+                    onCustomerAdded={() => {/* Optionally refresh customer list here */}}
+                    selectedCategory={selectedCategory}
+                />
+                {/* Add Customer Modal */}
+                
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                     <Box flex={1} display="flex" justifyContent="center">
                         <Typography
